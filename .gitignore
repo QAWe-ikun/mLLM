@@ -74,3 +74,8 @@ desktop.ini
 
 # Qwen local settings
 .qwen/
+
+# Office temp files
+~$*.docx
+~$*.xlsx
+~$*.pptx
