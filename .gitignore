@@ -1,0 +1,76 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# AI/ML
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+checkpoints/
+runs/
+wandb/
+*.log
+
+# Model weights (too large for git)
+models/
+weights/
+*.bin
+*.gguf
+*.onnx
+
+# AI2-THOR cache
+~/.ai2thor/
+.ai2thor/
+
+# Data
+*.h5
+*.hdf5
+*.npy
+*.npz
+data/cache/
+
+# Results (keep only code, not outputs)
+results/metrics/*.csv
+results/trajectories/*.png
+results/failure_analysis/*.png
+!results/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Git
+*.orig
+
+# Secrets
+.env
+*.key
+*.token
+
+# Qwen local settings
+.qwen/

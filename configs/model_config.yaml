@@ -1,0 +1,57 @@
+# Qwen3-VL 8B QLoRA 模型配置
+
+model:
+  base_model: "Qwen/Qwen3-VL-8B-Instruct"
+  trust_remote_code: true
+  
+  # 视觉编码器配置
+  vision:
+    clip_model: "openai/clip-vit-base-patch32"
+    sam_model: "dhkim281/mobilesam"  # MobileSAM轻量版
+    image_size: 300
+    clip_output_dim: 512
+    
+  # 位置编码器配置
+  position_encoder:
+    input_dim: 4          # [x, y, z, rotation]
+    hidden_dim: 256
+    output_dim: 4096      # 与LLM hidden_size对齐
+    
+  # 特征融合配置
+  feature_fusion:
+    projected_dim: 4096   # 投影到LLM输入维度
+    fusion_method: "concat"  # concat | additive
+
+# QLoRA量化配置
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_use_double_quant: true
+  
+# LoRA微调配置
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# 动作token配置
+action_tokens:
+  tokens:
+    MoveAhead: "<ACT_MoveAhead>"
+    RotateLeft: "<ACT_RotateLeft>"
+    RotateRight: "<ACT_RotateRight>"
+    LookUp: "<ACT_LookUp>"
+    LookDown: "<ACT_LookDown>"
+    Pickup: "<ACT_Pickup>"
+  token_start_idx: 32000

@@ -1,0 +1,65 @@
+# AI2-THOR 环境配置
+
+environment:
+  name: "ai2thor"
+  platform: "wsl"  # wsl | linux | windows
+  
+  # AI2-THOR参数
+  ai2thor:
+    grid_size: 0.25       # 移动步长(m)
+    rotate_step: 30       # 旋转角度(度)
+    camera_width: 300
+    camera_height: 300
+    visibility_distance: 1.5  # 目标可见距离(m)
+    
+  # 场景配置
+  scenes:
+    train:
+      # 15个训练场景(中等复杂度)
+      kitchen:   ["FloorPlan1", "FloorPlan2", "FloorPlan3", "FloorPlan4", "FloorPlan5"]
+      living:    ["FloorPlan201", "FloorPlan202", "FloorPlan203", "FloorPlan204", "FloorPlan205"]
+      bedroom:   ["FloorPlan301", "FloorPlan302", "FloorPlan303", "FloorPlan304", "FloorPlan305"]
+      
+    test_seen:   # 测试集-已见场景
+      - 与train相同
+      
+    test_unseen: # 测试集-未见场景(15个)
+      kitchen:   ["FloorPlan6", "FloorPlan7", "FloorPlan8", "FloorPlan9", "FloorPlan10"]
+      living:    ["FloorPlan206", "FloorPlan207", "FloorPlan208", "FloorPlan209", "FloorPlan210"]
+      bedroom:   ["FloorPlan306", "FloorPlan307", "FloorPlan308", "FloorPlan309", "FloorPlan310"]
+      
+  # 任务配置
+  tasks:
+    - name: "object_nav"
+      weight: 0.7  # 采样权重
+      max_steps: 50
+      target_objects:
+        - Microwave
+        - Fridge
+        - TV
+        - Laptop
+        - Sofa
+        - Chair
+        - Bed
+        - Sink
+        - Toilet
+        - Lamp
+        
+    - name: "pickup"
+      weight: 0.3
+      max_steps: 5
+      requires_nav: true  # 需要先导航到目标
+      
+  # 奖励配置
+  rewards:
+    success_nav: 10.0
+    success_pickup: 5.0
+    step_penalty: -0.1
+    closer_bonus: 0.05     # 靠近目标每步奖励
+    farther_penalty: -0.05 # 远离目标每步惩罚
+    illegal_action: -1.0
+    
+  # Episode配置
+  episode:
+    max_steps: 100
+    success_distance: 1.5  # 成功判定距离(m)

@@ -1,0 +1,53 @@
+# 训练超参数配置
+
+# SFT阶段配置
+sft:
+  data:
+    num_trajectories: 5000
+    avg_steps_per_trajectory: 15
+    augmentation_noise: 0.1  # 10%随机偏离
+    
+  training:
+    epochs: 3
+    per_device_train_batch_size: 2
+    gradient_accumulation_steps: 4
+    learning_rate: 2.0e-4
+    warmup_ratio: 0.03
+    max_grad_norm: 1.0
+    fp16: true
+    gradient_checkpointing: true
+    logging_steps: 50
+    save_steps: 500
+    eval_steps: 500
+    
+# PPO阶段配置
+ppo:
+  algorithm:
+    clip_epsilon: 0.2
+    gamma: 0.99          # 折扣因子
+    gae_lambda: 0.95     # GAE参数
+    value_loss_coef: 0.5
+    entropy_coef: 0.01
+    
+  training:
+    total_steps: 50000
+    rollout_steps: 2048       # 每次rollout步数
+    epochs_per_update: 4
+    per_device_train_batch_size: 2
+    gradient_accumulation_steps: 4
+    learning_rate: 1.0e-5
+    max_grad_norm: 0.5
+    clip_range_value: 0.2
+    
+  evaluation:
+    eval_episodes: 100
+    eval_interval: 5000  # 每N步评估一次
+    
+# 通用配置
+common:
+  seed: 42
+  num_workers: 4
+  output_dir: "results"
+  log_dir: "results/metrics"
+  checkpoint_dir: "results/checkpoints"
+  device: "cuda"

@@ -1,0 +1,30 @@
+# 核心依赖
+torch>=2.1.0
+transformers>=4.40.0
+accelerate>=0.30.0
+bitsandbytes>=0.43.0
+peft>=0.11.0
+trl>=0.8.0
+
+# 视觉模型
+openai-clip
+mobile-sam
+
+# 仿真环境
+ai2thor>=5.0.0
+
+# 数据处理
+numpy
+scipy
+opencv-python
+Pillow
+PyYAML
+
+# 评估与可视化
+matplotlib
+seaborn
+tqdm
+
+# 工具
+wandb              # 实验跟踪(可选)
+tensorboard        # 可视化(可选)
