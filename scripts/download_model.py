@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """
-脚本: 下载预训练模型到本地 (使用 ModelScope 国内镜像)
+脚本: 下载预训练模型到本地 (全部使用 ModelScope 国内镜像)
+
+策略:
+- Qwen3-VL: 'Qwen/Qwen3-VL-8B-Instruct'
+- CLIP:     'openai-mirror/clip-vit-base-patch32'
 
 用法:
     python scripts/download_model.py                          # 下载全部模型
@@ -10,10 +14,50 @@
 """
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import argparse
+import shutil
 from pathlib import Path
+
+
+def clean_modelscope_temp_files(directory: str):
+    """清理 ModelScope 产生的临时文件和锁
+    
+    下载完成后，ModelScope 可能会留下 `____temp` 目录和 `.lock` 文件。
+    此函数会递归扫描并删除它们，以节省空间。
+    
+    Args:
+        directory: 需要清理的根目录
+    """
+    if not os.path.exists(directory):
+        return
+
+    cleaned_count = 0
+
+    for root, dirs, files in os.walk(directory):
+        # 删除 ____temp 目录
+        for dir_name in dirs:
+            if dir_name == '____temp':
+                temp_path = os.path.join(root, dir_name)
+                try:
+                    shutil.rmtree(temp_path)
+                    print(f"  [清理] 删除临时目录: {temp_path}")
+                    cleaned_count += 1
+                except Exception as e:
+                    print(f"  [警告] 无法删除 {temp_path}: {e}")
+
+        # 删除 .lock 文件
+        for file_name in files:
+            if file_name.endswith('.lock'):
+                lock_path = os.path.join(root, file_name)
+                try:
+                    os.remove(lock_path)
+                    print(f"  [清理] 删除锁文件: {lock_path}")
+                    cleaned_count += 1
+                except Exception as e:
+                    print(f"  [警告] 无法删除 {lock_path}: {e}")
+
+    if cleaned_count > 0:
+        print(f"[OK] 清理了 {cleaned_count} 个临时项: {directory}")
 
 
 def check_modelscope():
@@ -31,123 +75,104 @@ def check_modelscope():
 
 
 def is_model_downloaded(local_dir: str, check_file: str = "config.json") -> bool:
-    """检查模型是否已下载完成
-    
-    Args:
-        local_dir: 模型保存路径
-        check_file: 用于验证的关键文件
-        
-    Returns:
-        是否已下载
-    """
+    """检查模型是否已下载"""
     path = Path(local_dir)
-    
-    # 目录不存在
     if not path.exists():
         return False
-    
-    # 检查关键文件
-    config_path = path / check_file
-    if config_path.exists():
+    if (path / check_file).exists():
         return True
-    
-    # 检查子目录
-    sub_configs = list(path.glob(f"**/{check_file}"))
-    if sub_configs:
+    if list(path.glob(f"**/{check_file}")):
         return True
-    
     return False
 
 
-def download_model(model_id: str, local_dir: str, force: bool = False, 
-                   source_name: str = "ModelScope") -> str:
-    """下载单个模型
-    
+def download_model(model_id: str, local_dir: str, force: bool = False) -> str:
+    """使用 ModelScope 下载模型
+
     Args:
-        model_id: ModelScope 上的模型ID
+        model_id: ModelScope 模型 ID
         local_dir: 本地保存路径
-        force: 是否强制重新下载
-        source_name: 来源名称（用于日志）
-        
-    Returns:
-        实际下载路径
+        force: 强制重下
     """
     print(f"\n{'='*60}")
     print(f"模型: {model_id}")
-    print(f"来源: {source_name}")
     print(f"目标: {local_dir}")
     print(f"{'='*60}")
-    
-    # 检查是否已存在
+
     if not force and is_model_downloaded(local_dir):
+        # 即使已下载，也检查一下是否有残留的临时文件
+        clean_modelscope_temp_files(local_dir)
         print(f"[OK] 模型已存在: {local_dir}")
-        print("     跳过下载 (使用 --force 强制重新下载)")
         return local_dir
-    
+
     try:
         from modelscope import snapshot_download
+
+        print(f"开始下载 (支持断点续传)...")
         
-        print(f"开始下载...")
+        # ModelScope snapshot_download 支持 cache_dir 指定缓存位置
         result_dir = snapshot_download(
             model_id,
-            local_dir=local_dir,
+            cache_dir=os.path.dirname(local_dir),
             revision='master'
         )
-        
+
+        # snapshot_download 通常返回实际存放文件的目录
         print(f"[OK] 下载完成: {result_dir}")
+
+        # 下载完成后，清理临时文件和锁
+        clean_modelscope_temp_files(result_dir)
+
         return result_dir
-        
+
     except Exception as e:
         print(f"\n[ERROR] 下载失败: {e}")
-        print("提示: 检查网络连接，或重新运行脚本可断点续传")
+        print("提示: 检查网络或稍后重试")
         raise
 
 
 def main():
     parser = argparse.ArgumentParser(description='下载预训练模型 (ModelScope)')
-    parser.add_argument('--force', action='store_true',
-                       help='强制重新下载')
-    parser.add_argument('--only-qwen', action='store_true',
-                       help='只下载 Qwen3-VL')
-    parser.add_argument('--only-clip', action='store_true',
-                       help='只下载 CLIP')
-    parser.add_argument('--output-dir', type=str, default='models',
-                       help='模型保存根目录 (默认: models)')
+    parser.add_argument('--force', action='store_true', help='强制重新下载')
+    parser.add_argument('--only-qwen', action='store_true', help='只下载 Qwen3-VL')
+    parser.add_argument('--only-clip', action='store_true', help='只下载 CLIP')
+    parser.add_argument('--output-dir', type=str, default='models', help='保存根目录')
     
     args = parser.parse_args()
     
+    print("="*60)
     print("VLA Agent 模型下载工具 (ModelScope)")
     print("="*60)
     
-    # 检查依赖
     if not check_modelscope():
         print("[ERROR] ModelScope 安装失败")
         sys.exit(1)
     
-    # 创建目录
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True)
     
     results = {}
     
     try:
-        # 下载 Qwen3-VL 8B
+        # 1. 下载 Qwen3-VL 8B
         if not args.only_clip:
             print("\n>>> 步骤 1/2: Qwen3-VL-8B")
             results['qwen'] = download_model(
                 model_id='Qwen/Qwen3-VL-8B-Instruct',
                 local_dir=str(output_dir / 'Qwen3-VL-8B'),
-                force=args.force,
+                force=args.force
             )
         
-        # 下载 CLIP ViT-B/32
+        # 2. 下载 CLIP ViT-B/32
         if not args.only_qwen:
             print("\n>>> 步骤 2/2: CLIP ViT-B/32")
             results['clip'] = download_model(
-                model_id='AI-ModelScope/clip-vit-base-patch32',
+                model_id='openai-mirror/clip-vit-base-patch32',
                 local_dir=str(output_dir / 'clip-vit-base-patch32'),
-                force=args.force,
+                force=args.force
             )
+        
+        clean_modelscope_temp_files(str(output_dir))  # 最后再清理一次，确保没有残留的临时文件
         
         # 汇总
         print("\n" + "="*60)
