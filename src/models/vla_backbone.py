@@ -146,13 +146,14 @@ class VLABackbone(nn.Module):
             logits: 动作预测logits [B, num_actions]
         """
         if self.is_dummy:
-            # Dummy模型：直接从视觉特征预测动作
+            # Dummy模型：
             if visual_features is not None:
                 # 取平均视觉特征
                 vis = visual_features.mean(dim=1)  # [B, 4096]
                 logits = self.model(vis)  # [B, num_actions]
             else:
-                logits = torch.randn(input_ids.shape[0], self.num_actions, device=self.device)
+                # 生成需要梯度的 dummy logits (用于测试计算图)
+                logits = torch.randn(input_ids.shape[0], self.num_actions, device=self.device, requires_grad=True)
         else:
             # 真实Qwen模型
             outputs = self.model(
