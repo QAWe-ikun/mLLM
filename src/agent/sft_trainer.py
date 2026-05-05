@@ -30,24 +30,34 @@ class SFTDataset(Dataset):
         self.data = self._load_data()
     
     def _load_data(self) -> List[Dict]:
-        """加载演示数据"""
+        """加载演示数据并展平为独立样本"""
         import json
         import os
-        
-        data = []
+
+        flattened_data = []
         if os.path.exists(self.data_path):
             with open(self.data_path, 'r') as f:
                 if self.data_path.endswith('.jsonl'):
-                    for line in f:
-                        data.append(json.loads(line))
+                    lines = f.readlines()
+                    episodes = [json.loads(line) for line in lines]
                 else:
-                    data = json.load(f)
+                    episodes = json.load(f)
+            
+            # 展平轨迹: episodes -> steps
+            for episode in episodes:
+                instruction = episode.get('instruction', '')
+                for step in episode.get('steps', []):
+                    flattened_data.append({
+                        'instruction': instruction,
+                        'action': step.get('action_idx', 0),
+                        'scene': episode.get('scene', ''),
+                    })
         else:
             print(f"Warning: Data file not found: {self.data_path}")
             print("Generating dummy data for testing")
-            data = self._generate_dummy_data()
-        
-        return data
+            flattened_data = self._generate_dummy_data()
+
+        return flattened_data
     
     def _generate_dummy_data(self, num_samples: int = 1000) -> List[Dict]:
         """生成dummy演示数据（用于测试）"""
