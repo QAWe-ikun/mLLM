@@ -54,10 +54,7 @@ weights/
 data/cache/
 
 # Results (keep only code, not outputs)
-results/metrics/*.csv
-results/trajectories/*.png
-results/failure_analysis/*.png
-!results/.gitkeep
+results/
 
 # OS
 .DS_Store

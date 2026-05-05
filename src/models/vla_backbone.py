@@ -222,7 +222,9 @@ class VLABackbone(nn.Module):
         """保存模型"""
         if self.is_dummy:
             print("Warning: Saving dummy model")
-            torch.save(self.model.state_dict(), save_path)
+            save_path = Path(save_path)
+            save_path.mkdir(parents=True, exist_ok=True)
+            torch.save(self.model.state_dict(), save_path / 'model.pt')
         else:
             self.model.save_pretrained(save_path)
             self.tokenizer.save_pretrained(save_path)

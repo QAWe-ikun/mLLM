@@ -197,32 +197,38 @@ class PPOTrainer:
         self.logger.info(f"Starting PPO training, total steps: {self.total_steps}")
         self.logger.info(f"Rollout steps: {self.rollout_steps}, "
                         f"Clip epsilon: {self.clip_epsilon}")
-        
+
+        progress_bar = tqdm(range(self.total_steps), desc="PPO Training")
+        progress_bar.update(self.global_step)
+
         while self.global_step < self.total_steps:
             # 1. 收集rollout
-            self.logger.info(f"Collecting rollout at step {self.global_step}")
+            progress_bar.set_description(f"Step {self.global_step}: Collecting rollout")
             self.collect_rollout()
-            
+
             # 2. 计算GAE
             self.buffer.compute_gae(gamma=self.gamma, gae_lambda=self.gae_lambda)
-            
+
             # 3. PPO更新
             for epoch in range(self.epochs_per_update):
                 self._ppo_update()
-            
-            self.global_step += self.rollout_steps
-            
-            # 4. 评估
+                progress_bar.update(1)
+
+            # 4. 评估（不打印日志，仅记录）
             if self.global_step % self.eval_interval == 0:
                 eval_metrics = self.evaluate()
                 self.metrics.log(eval_metrics, step=self.global_step)
-                self.logger.info(f"Step {self.global_step}: {eval_metrics}")
-                
+                progress_bar.set_postfix({
+                    'success': f"{eval_metrics.get('eval_success_rate', 0):.2f}",
+                    'reward': f"{eval_metrics.get('eval_avg_reward', 0):.2f}"
+                })
+
                 # 保存检查点
                 self.save_model(self.output_dir / f'checkpoint_{self.global_step}')
-        
+
         # 保存最终模型
         self.save_model(self.output_dir / 'final')
+        progress_bar.close()
         self.logger.info("PPO training completed!")
     
     def _ppo_update(self):

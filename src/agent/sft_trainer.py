@@ -213,19 +213,12 @@ class SFTTrainer:
             
             # 记录
             epoch_loss += loss.item() * self.gradient_accumulation
-            self.global_step += 1
             
-            # 日志
+            # 更新进度条显示的 Loss，避免 logger 打印导致进度条刷屏
             if self.global_step % self.logging_steps == 0:
                 avg_loss = epoch_loss / (step + 1)
-                self.logger.info(f"Step {self.global_step}: Loss = {avg_loss:.4f}")
+                progress_bar.set_postfix({'loss': f'{avg_loss:.4f}'})
                 self.metrics.log({'loss': avg_loss}, step=self.global_step)
-            
-            # 保存检查点
-            if self.global_step % self.save_steps == 0:
-                self.save_model(self.output_dir / f'checkpoint_{self.global_step}')
-            
-            progress_bar.set_postfix({'loss': loss.item() * self.gradient_accumulation})
         
         # Epoch结束
         avg_epoch_loss = epoch_loss / len(dataloader)

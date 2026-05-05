@@ -64,17 +64,27 @@ class EvalRunner:
             return MetricsCalculator()
         
         calc = MetricsCalculator()
-        
-        print(f"Evaluating on {num_episodes} episodes ({'seen' if seen else 'unseen'} scenes)")
-        
-        for ep in tqdm(range(num_episodes)):
+
+        scene_type = 'seen' if seen else 'unseen'
+        progress_bar = tqdm(range(num_episodes), desc=f"Evaluating ({scene_type})")
+
+        for ep in progress_bar:
             # 随机选择场景和目标
             scene = np.random.choice(scenes)
             target = np.random.choice(self.target_objects)
-            
+
             # 运行episode
             result = self._run_episode(scene, target)
             calc.add_result(result)
+
+            # 更新进度条
+            if (ep + 1) % 10 == 0:
+                sr = calc.get_metric('success_rate')
+                spl = calc.get_metric('spl')
+                progress_bar.set_postfix({
+                    'SR': f"{sr:.2f}",
+                    'SPL': f"{spl:.2f}"
+                })
         
         return calc
     
