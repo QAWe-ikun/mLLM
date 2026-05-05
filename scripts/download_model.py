@@ -34,9 +34,9 @@ def clean_modelscope_temp_files(directory: str):
     cleaned_count = 0
 
     for root, dirs, files in os.walk(directory):
-        # 删除 ____temp 目录
+        # 删除 .____temp 目录
         for dir_name in dirs:
-            if dir_name == '____temp':
+            if dir_name == '.____temp':
                 temp_path = os.path.join(root, dir_name)
                 try:
                     shutil.rmtree(temp_path)
@@ -101,7 +101,6 @@ def download_model(model_id: str, local_dir: str, force: bool = False) -> str:
 
     if not force and is_model_downloaded(local_dir):
         # 即使已下载，也检查一下是否有残留的临时文件
-        clean_modelscope_temp_files(local_dir)
         print(f"[OK] 模型已存在: {local_dir}")
         return local_dir
 
@@ -119,9 +118,6 @@ def download_model(model_id: str, local_dir: str, force: bool = False) -> str:
 
         # snapshot_download 通常返回实际存放文件的目录
         print(f"[OK] 下载完成: {result_dir}")
-
-        # 下载完成后，清理临时文件和锁
-        clean_modelscope_temp_files(result_dir)
 
         return result_dir
 
@@ -171,8 +167,9 @@ def main():
                 local_dir=str(output_dir / 'clip-vit-base-patch32'),
                 force=args.force
             )
-        
-        clean_modelscope_temp_files(str(output_dir))  # 最后再清理一次，确保没有残留的临时文件
+            
+        # 最后再清理一次，确保没有残留的临时文件
+        clean_modelscope_temp_files(str(output_dir))  
         
         # 汇总
         print("\n" + "="*60)

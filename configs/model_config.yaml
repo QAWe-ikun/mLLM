@@ -1,12 +1,12 @@
 # Qwen3-VL 8B QLoRA 模型配置
 # (注意: load_all_configs 会自动将其放入 configs['model'] 键下)
 
-base_model: "models/Qwen3-VL-8B"
+base_model: "models/Qwen/Qwen3-VL-8B"
 trust_remote_code: true
 
 # 视觉编码器配置
 vision:
-  clip_model: "openai/clip-vit-base-patch32"
+  clip_model: "models/openai-mirror/clip-vit-base-patch32"
   sam_model: "dhkim281/mobilesam"
   image_size: 300
   clip_output_dim: 512

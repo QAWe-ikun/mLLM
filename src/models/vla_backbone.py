@@ -117,7 +117,8 @@ class VLABackbone(nn.Module):
                 self.eos_token_id = 1
 
             def __call__(self, text, **kwargs):
-                return {'input_ids': torch.randint(0, 100, (1, 10))}
+                ids = torch.randint(0, 100, (1, 10))
+                return {'input_ids': ids, 'attention_mask': torch.ones_like(ids)}
 
             def decode(self, ids, **kwargs):
                 return 'dummy_action'
