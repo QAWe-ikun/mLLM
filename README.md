@@ -64,22 +64,31 @@ python scripts/download_model.py --force
 **方法A: 如果WSL能访问GitHub**
 ```bash
 pip install git+https://github.com/ChaoningZhang/MobileSAM.git
-pip install timm==0.6.7
+pip install "timm>=1.0.0"
 ```
 
 **方法B: Windows下载 + WSL安装 (网络受限时)**
 ```bash
 # Windows (PowerShell/CMD):
-cd C:\\Users\\YourName\\Downloads
+cd C:\Users\YourName\Downloads
 git clone https://github.com/ChaoningZhang/MobileSAM.git
 
 # 回到WSL:
 cd /mnt/c/Users/YourName/Downloads/MobileSAM
 pip install -e .
-pip install timm==0.6.7
+pip install "timm>=1.0.0"
 ```
 
-### 4. 安装其余依赖
+### 5. 安装 AI2-THOR 环境
+
+```bash
+pip install ai2thor
+```
+
+**注意**: 首次运行 PPO 脚本时，AI2-THOR 会自动下载 Unity 仿真引擎 (约 770MB)。
+如果下载速度过慢，请确保你的 WSL 终端已正确配置代理。
+
+### 6. 安装其余依赖
 
 ```bash
 cd /path/to/mLLM
@@ -208,6 +217,6 @@ python scripts/05_visualize.py
 
 ## 课程信息
 
-**课程**: 多模态大模型原理与应用  
-**学期**: 2025-2026 春季学期  
+**课程**: 多模态大模型原理与应用
+**学期**: 2025-2026 春季学期
 **项目类型**: 期末大作业 - 题目5: 游戏或仿真环境中的多模态智能Agent
