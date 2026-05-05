@@ -1,26 +1,26 @@
 # Qwen3-VL 8B QLoRA 模型配置
+# (注意: load_all_configs 会自动将其放入 configs['model'] 键下)
 
-model:
-  base_model: "Qwen/Qwen3-VL-8B-Instruct"
-  trust_remote_code: true
-  
-  # 视觉编码器配置
-  vision:
-    clip_model: "openai/clip-vit-base-patch32"
-    sam_model: "dhkim281/mobilesam"  # MobileSAM轻量版
-    image_size: 300
-    clip_output_dim: 512
-    
-  # 位置编码器配置
-  position_encoder:
-    input_dim: 4          # [x, y, z, rotation]
-    hidden_dim: 256
-    output_dim: 4096      # 与LLM hidden_size对齐
-    
-  # 特征融合配置
-  feature_fusion:
-    projected_dim: 4096   # 投影到LLM输入维度
-    fusion_method: "concat"  # concat | additive
+base_model: "models/Qwen3-VL-8B"
+trust_remote_code: true
+
+# 视觉编码器配置
+vision:
+  clip_model: "openai/clip-vit-base-patch32"
+  sam_model: "dhkim281/mobilesam"
+  image_size: 300
+  clip_output_dim: 512
+
+# 位置编码器配置
+position_encoder:
+  input_dim: 4
+  hidden_dim: 256
+  output_dim: 4096
+
+# 特征融合配置
+feature_fusion:
+  projected_dim: 4096
+  fusion_method: "concat"
 
 # QLoRA量化配置
 quantization:
@@ -28,7 +28,7 @@ quantization:
   bnb_4bit_quant_type: "nf4"
   bnb_4bit_compute_dtype: "bfloat16"
   bnb_4bit_use_double_quant: true
-  
+
 # LoRA微调配置
 lora:
   r: 16

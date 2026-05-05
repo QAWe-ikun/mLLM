@@ -39,7 +39,21 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 python3 -c "import torch; print(torch.cuda.is_available())"
 ```
 
-### 3. 安装 MobileSAM (需从 GitHub 安装)
+### 3. 下载预训练模型
+
+模型默认从本地加载（不在线下载），使用脚本下载到指定目录：
+
+```bash
+# 下载 Qwen3-VL 8B
+python scripts/download_model.py --model Qwen/Qwen3-VL-8B-Instruct --output models/Qwen3-VL-8B
+
+# 下载 CLIP ViT-B/32 (可选，代码会自动fallback)
+python scripts/download_model.py --clip --output models/clip-vit-b32
+```
+
+如果模型不存在，代码会自动 fallback 到 dummy 模式进行测试。
+
+### 4. 安装 MobileSAM (需从 GitHub 安装)
 
 **方法A: 如果WSL能访问GitHub**
 ```bash
