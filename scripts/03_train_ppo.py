@@ -62,9 +62,9 @@ def main():
         print("Please ensure AI2-THOR is installed and running on WSL/Linux")
         return
     
-    # 初始化模型
+    # 初始化模型 (VLABackbone 内部会取 configs['model'])
     logger.info("Loading VLA backbone from SFT checkpoint...")
-    model = VLABackbone(configs['model'])
+    model = VLABackbone(configs)
     
     # 加载SFT权重 (如果有)
     if Path(args.sft_ckpt).exists():

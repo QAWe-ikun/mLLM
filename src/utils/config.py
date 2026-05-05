@@ -34,7 +34,7 @@ def load_all_configs(config_dir: Optional[str] = None) -> Dict[str, Any]:
     
     config_files = {
         'model': 'model_config.yaml',
-        'env': 'env_config.yaml',
+        'environment': 'env_config.yaml',
         'train': 'train_config.yaml',
     }
     

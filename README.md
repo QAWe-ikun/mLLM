@@ -39,16 +39,22 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 python3 -c "import torch; print(torch.cuda.is_available())"
 ```
 
-### 3. 下载预训练模型
+### 3. 下载预训练模型 (使用 ModelScope 国内镜像)
 
-模型默认从本地加载（不在线下载），使用脚本下载到指定目录：
+模型默认从本地加载（不在线下载），使用脚本通过 ModelScope 下载：
 
 ```bash
-# 下载 Qwen3-VL 8B
-python scripts/download_model.py --model Qwen/Qwen3-VL-8B-Instruct --output models/Qwen3-VL-8B
+# 下载全部模型 (Qwen3-VL 8B + CLIP)
+python scripts/download_model.py
 
-# 下载 CLIP ViT-B/32 (可选，代码会自动fallback)
-python scripts/download_model.py --clip --output models/clip-vit-b32
+# 只下载 Qwen3-VL 8B
+python scripts/download_model.py --only-qwen
+
+# 只下载 CLIP ViT-B/32
+python scripts/download_model.py --only-clip
+
+# 强制重新下载
+python scripts/download_model.py --force
 ```
 
 如果模型不存在，代码会自动 fallback 到 dummy 模式进行测试。

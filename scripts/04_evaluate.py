@@ -52,9 +52,9 @@ def main():
         logger.error(f"Failed to initialize environment: {e}")
         return
     
-    # 初始化模型
+    # 初始化模型 (VLABackbone 内部会取 configs['model'])
     logger.info(f"Loading model from {args.model}")
-    model = VLABackbone(configs['model'])
+    model = VLABackbone(configs)
     
     if Path(args.model).exists():
         logger.info("Loading trained weights...")

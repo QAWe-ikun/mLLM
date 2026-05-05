@@ -48,9 +48,9 @@ def main():
     if args.lr:
         configs['train']['sft']['training']['learning_rate'] = args.lr
     
-    # 初始化模型
+    # 初始化模型 (VLABackbone 内部会取 configs['model'])
     logger.info("Loading VLA backbone...")
-    model = VLABackbone(configs['model'])
+    model = VLABackbone(configs)
     
     # 初始化训练器
     trainer = SFTTrainer(

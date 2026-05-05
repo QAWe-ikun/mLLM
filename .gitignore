@@ -36,7 +36,7 @@ wandb/
 *.log
 
 # Model weights (too large for git)
-models/
+/models/
 weights/
 *.bin
 *.gguf

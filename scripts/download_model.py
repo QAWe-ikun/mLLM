@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """
-脚本: 下载预训练模型到本地
+脚本: 下载预训练模型到本地 (使用 ModelScope 国内镜像)
 
 用法:
-    python scripts/download_model.py --model Qwen/Qwen3-VL-8B-Instruct --output models/Qwen3-VL-8B
-    python scripts/download_model.py --model openai/clip-vit-base-patch32 --output models/clip-vit-b32
+    python scripts/download_model.py                          # 下载全部模型
+    python scripts/download_model.py --only-qwen              # 只下载 Qwen3-VL
+    python scripts/download_model.py --only-clip              # 只下载 CLIP
+    python scripts/download_model.py --force                  # 强制重新下载
 """
 import sys
 import os
@@ -14,91 +16,152 @@ import argparse
 from pathlib import Path
 
 
-def download_model(model_name: str, output_dir: str, use_mirror: bool = True):
-    """下载模型到本地
+def check_modelscope():
+    """检查/安装 ModelScope"""
+    try:
+        import modelscope
+        print(f"[OK] ModelScope 已安装: {modelscope.__version__}")
+        return True
+    except ImportError:
+        print("[!] ModelScope 未找到，正在安装...")
+        import subprocess
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "modelscope", "--upgrade"])
+        print("[OK] ModelScope 安装完成")
+        return True
+
+
+def is_model_downloaded(local_dir: str, check_file: str = "config.json") -> bool:
+    """检查模型是否已下载完成
     
     Args:
-        model_name: HuggingFace模型ID
-        output_dir: 本地保存路径
-        use_mirror: 是否使用HF镜像加速(国内推荐)
+        local_dir: 模型保存路径
+        check_file: 用于验证的关键文件
+        
+    Returns:
+        是否已下载
     """
-    import os
+    path = Path(local_dir)
     
-    if use_mirror:
-        os.environ.setdefault('HF_ENDPOINT', 'https://hf-mirror.com')
+    # 目录不存在
+    if not path.exists():
+        return False
     
-    from transformers import AutoTokenizer, AutoModelForCausalLM
+    # 检查关键文件
+    config_path = path / check_file
+    if config_path.exists():
+        return True
     
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
+    # 检查子目录
+    sub_configs = list(path.glob(f"**/{check_file}"))
+    if sub_configs:
+        return True
     
-    print(f"=" * 60)
-    print(f"Downloading model: {model_name}")
-    print(f"Save to: {output_path}")
-    print(f"Using mirror: {use_mirror}")
-    print(f"=" * 60)
+    return False
+
+
+def download_model(model_id: str, local_dir: str, force: bool = False, 
+                   source_name: str = "ModelScope") -> str:
+    """下载单个模型
     
-    # 下载 tokenizer
-    print("\n[1/2] Downloading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name,
-        trust_remote_code=True,
-        cache_dir=str(output_path),
-    )
-    tokenizer.save_pretrained(str(output_path))
-    print(f"Tokenizer saved to {output_path}")
+    Args:
+        model_id: ModelScope 上的模型ID
+        local_dir: 本地保存路径
+        force: 是否强制重新下载
+        source_name: 来源名称（用于日志）
+        
+    Returns:
+        实际下载路径
+    """
+    print(f"\n{'='*60}")
+    print(f"模型: {model_id}")
+    print(f"来源: {source_name}")
+    print(f"目标: {local_dir}")
+    print(f"{'='*60}")
     
-    # 下载模型
-    print("\n[2/2] Downloading model weights...")
-    print("This may take a while depending on your network speed...")
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        trust_remote_code=True,
-        cache_dir=str(output_path),
-    )
-    model.save_pretrained(str(output_path))
-    print(f"Model saved to {output_path}")
+    # 检查是否已存在
+    if not force and is_model_downloaded(local_dir):
+        print(f"[OK] 模型已存在: {local_dir}")
+        print("     跳过下载 (使用 --force 强制重新下载)")
+        return local_dir
     
-    print("\n" + "=" * 60)
-    print("Download completed!")
-    print(f"Model path: {output_path}")
-    print("=" * 60)
+    try:
+        from modelscope import snapshot_download
+        
+        print(f"开始下载...")
+        result_dir = snapshot_download(
+            model_id,
+            local_dir=local_dir,
+            revision='master'
+        )
+        
+        print(f"[OK] 下载完成: {result_dir}")
+        return result_dir
+        
+    except Exception as e:
+        print(f"\n[ERROR] 下载失败: {e}")
+        print("提示: 检查网络连接，或重新运行脚本可断点续传")
+        raise
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Download model from HuggingFace')
-    parser.add_argument('--model', type=str, default='Qwen/Qwen3-VL-8B-Instruct',
-                       help='Model ID on HuggingFace')
-    parser.add_argument('--output', type=str, default='models/Qwen3-VL-8B',
-                       help='Local save path')
-    parser.add_argument('--no-mirror', action='store_true',
-                       help='Disable HuggingFace mirror')
-    parser.add_argument('--clip', action='store_true',
-                       help='Download CLIP model instead')
+    parser = argparse.ArgumentParser(description='下载预训练模型 (ModelScope)')
+    parser.add_argument('--force', action='store_true',
+                       help='强制重新下载')
+    parser.add_argument('--only-qwen', action='store_true',
+                       help='只下载 Qwen3-VL')
+    parser.add_argument('--only-clip', action='store_true',
+                       help='只下载 CLIP')
+    parser.add_argument('--output-dir', type=str, default='models',
+                       help='模型保存根目录 (默认: models)')
     
     args = parser.parse_args()
     
-    if args.clip:
-        # 下载CLIP
-        print("Downloading CLIP model...")
-        from transformers import CLIPVisionModel, CLIPImageProcessor
-        model_name = "openai/clip-vit-base-patch32"
-        output_path = Path(args.output)
-        output_path.mkdir(parents=True, exist_ok=True)
+    print("VLA Agent 模型下载工具 (ModelScope)")
+    print("="*60)
+    
+    # 检查依赖
+    if not check_modelscope():
+        print("[ERROR] ModelScope 安装失败")
+        sys.exit(1)
+    
+    # 创建目录
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(exist_ok=True)
+    
+    results = {}
+    
+    try:
+        # 下载 Qwen3-VL 8B
+        if not args.only_clip:
+            print("\n>>> 步骤 1/2: Qwen3-VL-8B")
+            results['qwen'] = download_model(
+                model_id='Qwen/Qwen3-VL-8B-Instruct',
+                local_dir=str(output_dir / 'Qwen3-VL-8B'),
+                force=args.force,
+            )
         
-        processor = CLIPImageProcessor.from_pretrained(model_name)
-        processor.save_pretrained(str(output_path))
+        # 下载 CLIP ViT-B/32
+        if not args.only_qwen:
+            print("\n>>> 步骤 2/2: CLIP ViT-B/32")
+            results['clip'] = download_model(
+                model_id='AI-ModelScope/clip-vit-base-patch32',
+                local_dir=str(output_dir / 'clip-vit-base-patch32'),
+                force=args.force,
+            )
         
-        model = CLIPVisionModel.from_pretrained(model_name)
-        model.save_pretrained(str(output_path))
+        # 汇总
+        print("\n" + "="*60)
+        print("下载汇总")
+        print("="*60)
+        for name, path in results.items():
+            print(f"  {name}: {path}")
         
-        print(f"CLIP model saved to {output_path}")
-    else:
-        download_model(
-            model_name=args.model,
-            output_dir=args.output,
-            use_mirror=not args.no_mirror,
-        )
+        print(f"\n模型已保存到 {output_dir}/ 目录")
+        print("可以直接运行训练脚本了！")
+        
+    except Exception as e:
+        print(f"\n[ERROR] 下载失败: {e}")
+        sys.exit(1)
 
 
 if __name__ == '__main__':
