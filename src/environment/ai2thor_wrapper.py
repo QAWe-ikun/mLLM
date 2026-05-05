@@ -1,8 +1,7 @@
 """AI2-THOR环境Gym风格包装器"""
 import numpy as np
-from typing import Dict, Any, Optional, Tuple, List
 from ai2thor.controller import Controller
-from ai2thor.hooks.procedural_asset_hook import ProceduralAssetHook
+from typing import Dict, Any, Optional, Tuple, List
 
 
 class AI2THORWrapper:

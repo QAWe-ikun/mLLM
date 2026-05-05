@@ -14,11 +14,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argparse
 from pathlib import Path
 
-from src.utils.config import load_all_configs
 from src.utils.logger import Logger
+from src.agent.ppo_trainer import PPOTrainer
+from src.utils.config import load_all_configs
 from src.models.vla_backbone import VLABackbone
 from src.environment.ai2thor_wrapper import AI2THORWrapper
-from src.agent.ppo_trainer import PPOTrainer
 
 
 def main():

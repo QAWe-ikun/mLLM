@@ -12,13 +12,11 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import argparse
-from pathlib import Path
-import torch
 
-from src.utils.config import load_all_configs
 from src.utils.logger import Logger
-from src.models.vla_backbone import VLABackbone
 from src.agent.sft_trainer import SFTTrainer
+from src.utils.config import load_all_configs
+from src.models.vla_backbone import VLABackbone
 
 
 def main():

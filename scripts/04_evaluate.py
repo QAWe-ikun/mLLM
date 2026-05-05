@@ -15,11 +15,11 @@ import argparse
 from pathlib import Path
 import json
 
-from src.utils.config import load_all_configs
 from src.utils.logger import Logger
+from src.utils.config import load_all_configs
 from src.models.vla_backbone import VLABackbone
-from src.environment.ai2thor_wrapper import AI2THORWrapper
 from src.evaluation.eval_runner import EvalRunner
+from src.environment.ai2thor_wrapper import AI2THORWrapper
 
 
 def main():

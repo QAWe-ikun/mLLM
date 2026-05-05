@@ -1,19 +1,17 @@
 """SFT监督微调训练器"""
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
-from typing import Dict, Any, Optional, List, Tuple
-from pathlib import Path
-from tqdm import tqdm
 import numpy as np
+import torch.nn as nn
+from tqdm import tqdm
+from pathlib import Path
+import torch.nn.functional as F
+from typing import Dict, Any, List
+from torch.utils.data import DataLoader, Dataset
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.utils.logger import Logger, MetricsTracker
-from src.utils.config import load_config
-
 
 class SFTDataset(Dataset):
     """SFT训练数据集
