@@ -10,7 +10,7 @@ trl>=0.8.0
 
 # 视觉模型
 openai-clip
-timm==0.6.7
+timm>=1.0.0
 
 # MobileSAM (需要从 GitHub 安装)
 # 方法 1: 在 WSL 中直接安装 (需网络通)

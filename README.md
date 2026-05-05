@@ -70,7 +70,7 @@ pip install timm==0.6.7
 **方法B: Windows下载 + WSL安装 (网络受限时)**
 ```bash
 # Windows (PowerShell/CMD):
-cd C:\Users\YourName\Downloads
+cd C:\\Users\\YourName\\Downloads
 git clone https://github.com/ChaoningZhang/MobileSAM.git
 
 # 回到WSL:
