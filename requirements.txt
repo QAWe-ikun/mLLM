@@ -1,5 +1,7 @@
 # 核心依赖
 torch>=2.1.0
+torchvision
+torchaudio
 transformers>=4.40.0
 accelerate>=0.30.0
 bitsandbytes>=0.43.0
@@ -8,7 +10,15 @@ trl>=0.8.0
 
 # 视觉模型
 openai-clip
-mobile-sam
+timm==0.6.7
+
+# MobileSAM (需要从 GitHub 安装)
+# 方法 1: 在 WSL 中直接安装 (需网络通)
+#   pip install git+https://github.com/ChaoningZhang/MobileSAM.git
+# 方法 2: Windows 下载后在 WSL 安装
+#   Windows: git clone https://github.com/ChaoningZhang/MobileSAM.git
+#   WSL:     cd /mnt/d/experiment/MobileSAM && pip install -e .
+mobile_sam @ git+https://github.com/ChaoningZhang/MobileSAM.git
 
 # 仿真环境
 ai2thor>=5.0.0
@@ -26,5 +36,5 @@ seaborn
 tqdm
 
 # 工具
-wandb              # 实验跟踪(可选)
-tensorboard        # 可视化(可选)
+tensorboard
+# wandb              # 实验跟踪(可选)

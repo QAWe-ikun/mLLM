@@ -7,7 +7,7 @@
 本项目构建一个"视觉+语言"导航Agent，给定自然语言指令与第一人称视觉观测，Agent规划并执行动作序列来完成目标导航(ObjectNav)和拾取交互(Pickup)任务。
 
 **核心架构**：
-- **仿真环境**: AI2-THOR (WSL headless模式)
+- **仿真环境**: AI2-THOR (WSL/Linux headless模式)
 - **视觉编码**: CLIP ViT-B/32 + MobileSAM
 - **VLA基座**: Qwen3-VL 8B (QLoRA 4bit微调)
 - **强化学习**: PPO (SFT + RL两阶段训练)
@@ -17,29 +17,60 @@
 
 ### 环境要求
 
-- Python 3.10+
-- GPU: RTX 4090 (24GB) 推荐，最低 RTX 4080 (16GB)
-- AI2-THOR (运行在WSL或Linux环境)
+- Python 3.12 (推荐)
+- GPU: RTX 4060 Ti (16GB) 或更高
+- 操作系统: WSL2 或 Linux
 
-### 安装
+### 1. 环境准备 (WSL/Linux)
 
 ```bash
-# 克隆仓库
-git clone https://github.com/QAWe-ikun/mLLM.git
-cd mLLM
+# 使用 conda 创建环境
+conda create -n mllm python=3.12
+conda activate mllm
+```
 
-# 安装依赖
+### 2. 安装 PyTorch (GPU版本)
+
+```bash
+# CUDA 12.x (推荐)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# 验证GPU
+python3 -c "import torch; print(torch.cuda.is_available())"
+```
+
+### 3. 安装 MobileSAM (需从 GitHub 安装)
+
+**方法A: 如果WSL能访问GitHub**
+```bash
+pip install git+https://github.com/ChaoningZhang/MobileSAM.git
+pip install timm==0.6.7
+```
+
+**方法B: Windows下载 + WSL安装 (网络受限时)**
+```bash
+# Windows (PowerShell/CMD):
+cd C:\Users\YourName\Downloads
+git clone https://github.com/ChaoningZhang/MobileSAM.git
+
+# 回到WSL:
+cd /mnt/c/Users/YourName/Downloads/MobileSAM
+pip install -e .
+pip install timm==0.6.7
+```
+
+### 4. 安装其余依赖
+
+```bash
+cd /path/to/mLLM
 pip install -r requirements.txt
-
-# AI2-THOR安装 (Linux/WSL)
-pip install ai2thor
 ```
 
 ### 运行
 
 ```bash
 # 1. 生成SFT演示数据
-python scripts/01_generate_sft_data.py
+python scripts/01_generate_sft_data.py --num 5000
 
 # 2. SFT阶段训练
 python scripts/02_train_sft.py
@@ -58,41 +89,39 @@ python scripts/05_visualize.py
 
 ```
 ├── configs/                    # YAML配置文件
-│   ├── env.yaml               # AI2-THOR环境配置
-│   ├── model.yaml             # 模型架构+QLoRA配置
-│   └── train.yaml             # 训练超参数
+│   ├── env_config.yaml         # AI2-THOR环境配置
+│   ├── model_config.yaml       # 模型架构+QLoRA配置
+│   └── train_config.yaml       # 训练超参数
 ├── src/
-│   ├── environment/           # 环境模块
-│   │   ├── ai2thor_wrapper.py # AI2-THOR环境封装
-│   │   └── tasks/             # 任务定义
-│   │       ├── object_nav.py  # ObjectNav任务
-│   │       └── pickup.py      # Pickup交互任务
-│   ├── perception/            # 感知模块
-│   │   ├── clip_encoder.py    # CLIP特征提取
-│   │   ├── mobile_sam.py      # MobileSAM目标检测
+│   ├── environment/            # 环境模块
+│   │   ├── ai2thor_wrapper.py  # AI2-THOR环境封装
+│   │   └── tasks/              # 任务定义
+│   ├── perception/             # 感知模块
+│   │   ├── clip_encoder.py     # CLIP特征提取
+│   │   ├── mobile_sam.py       # MobileSAM目标检测
 │   │   └── position_encoder.py # 位置编码器
-│   ├── models/                # 模型模块
-│   │   ├── vla_backbone.py    # Qwen3-VL QLoRA封装
-│   │   ├── feature_fusion.py  # 多模态特征融合
-│   │   └── action_head.py     # 动作输出头
-│   ├── agent/                 # Agent模块
-│   │   ├── ppo_trainer.py     # PPO训练器
-│   │   ├── sft_trainer.py     # SFT训练器
-│   │   └── rollout_buffer.py  # 经验回放
-│   └── evaluation/            # 评估模块
-│       ├── metrics.py         # SR/SPL计算
-│       ├── eval_runner.py     # 评估运行器
-│       └── visualization.py   # 轨迹可视化
-├── scripts/                   # 运行脚本
+│   │   └── feature_fusion.py   # 多模态特征融合
+│   ├── models/                 # 模型模块
+│   │   ├── vla_backbone.py     # Qwen3-VL QLoRA封装
+│   │   └── action_head.py      # 动作输出头
+│   ├── agent/                  # Agent模块
+│   │   ├── ppo_trainer.py      # PPO训练器
+│   │   ├── sft_trainer.py      # SFT训练器
+│   │   └── rollout_buffer.py   # 经验回放
+│   └── evaluation/             # 评估模块
+│       ├── metrics.py          # SR/SPL计算
+│       ├── eval_runner.py      # 评估运行器
+│       └── visualization.py    # 轨迹可视化
+├── scripts/                    # 运行脚本
 │   ├── 01_generate_sft_data.py
 │   ├── 02_train_sft.py
 │   ├── 03_train_ppo.py
 │   ├── 04_evaluate.py
 │   └── 05_visualize.py
-├── docs/                      # 文档
+├── docs/                       # 文档
 │   ├── 开题报告.md
 │   └── 开题展示.pptx
-└── results/                   # 实验结果输出
+└── results/                    # 实验结果输出
     ├── metrics/
     ├── trajectories/
     └── failure_analysis/
