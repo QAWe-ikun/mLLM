@@ -25,8 +25,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-org/mllm-agent.git
-cd mllm-agent
+git clone https://github.com/QAWe-ikun/mLLM.git
+cd mLLM
 
 # 安装依赖
 pip install -r requirements.txt
