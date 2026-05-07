@@ -207,6 +207,13 @@ class SFTTrainer:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
                 self.optimizer.step()
                 self.optimizer.zero_grad()
+
+                # 保持 lm_head 和 embed_tokens 的新增token参数同步
+                # (PEFT 的 trainable_token_indices 只训练embedding，
+                #  但 tied weights 需要手动同步以确保 lm_head 也更新)
+                if hasattr(self.model, 'tie_weights'):
+                    self.model.tie_weights()
+
                 self.global_step += 1
             
             # 记录

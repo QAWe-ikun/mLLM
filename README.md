@@ -8,10 +8,11 @@
 
 **核心架构**：
 - **仿真环境**: AI2-THOR (WSL/Linux headless模式)
-- **视觉编码**: CLIP ViT-B/32 + MobileSAM
-- **VLA基座**: Qwen3-VL 8B (QLoRA 4bit微调)
+- **感知模块**: CLIP (zero-shot目标定位) + MobileSAM (精确分割)
+- **VLA基座**: Qwen3-VL 8B (QLoRA 4bit微调, trainable_token_indices)
 - **强化学习**: PPO (SFT + RL两阶段训练)
 - **位置编码**: Agent 3D坐标+旋转角 → 可学习embedding
+- **奖励设计**: 稀疏奖励 (不依赖目标绝对位置，避免信息泄露)
 
 ## 快速开始
 
@@ -75,15 +76,11 @@ git clone https://github.com/ChaoningZhang/MobileSAM.git
 
 # 回到WSL:
 cd /mnt/c/Users/YourName/Downloads/MobileSAM
-pip install -e .
 pip install "timm>=1.0.0"
+pip install -e .
 ```
 
 ### 5. 安装 AI2-THOR 环境
-
-```bash
-pip install ai2thor
-```
 
 **注意**: 首次运行 PPO 脚本时，AI2-THOR 会自动下载 Unity 仿真引擎 (约 770MB)。
 如果下载速度过慢，请确保你的 WSL 终端已正确配置代理。
@@ -185,9 +182,20 @@ python scripts/05_visualize.py
 | 到达目标 | +10.0 |
 | 成功拾取 | +5.0 |
 | 每步惩罚 | -0.1 |
-| 靠近目标 | +0.05/步 |
-| 远离目标 | -0.05/步 |
 | 碰撞/越界 | -1.0 |
+
+> **注意**: 采用稀疏奖励设计，移除了基于目标绝对位置的closer/farther奖励，
+> 避免信息泄露(cheating)。Agent需通过视觉感知学习目标定位。
+
+### 训练时间预期
+
+| 阶段 | 数据量 | 预计时间 (RTX 4060 Ti 16GB) |
+|------|--------|---------------------------|
+| SFT | 5000 episodes | 1-2小时 |
+| PPO | 50K steps | 3-7天 |
+
+> PPO训练时间较长是因为需要在线环境交互收集经验。
+> 后续可考虑替换为DPO等离线RL方法加速训练。
 
 ## 评测指标
 
@@ -198,8 +206,19 @@ python scripts/05_visualize.py
 
 | 指标 | Seen场景 | Unseen场景 |
 |------|----------|------------|
-| 成功率 | > 50% | > 30% |
-| SPL | > 0.3 | > 0.2 |
+| 成功率 | > 60% | > 40% |
+| SPL | > 0.4 | > 0.25 |
+
+### 消融实验设计
+
+| 实验组 | 配置 | 目的 |
+|--------|------|------|
+| Baseline | 纯Qwen3-VL (无SAM、无位置编码) | 验证外挂模块的必要性 |
+| +SAM | Baseline + MobileSAM目标定位 | 验证SAM空间感知的增量收益 |
+| +PosEnc | Baseline + 位置编码 | 验证Agent自定位的增量收益 |
+| Full | SAM + PosEnc + 位置编码 | 完整模型 |
+| 仅SFT | Full模型仅SFT训练 | 验证PPO阶段的增量收益 |
+| SFT+PPO | Full模型两阶段训练 | 验证RL优化的增量收益 |
 
 ## 相关论文
 

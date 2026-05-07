@@ -40,8 +40,6 @@ class AI2THORWrapper:
         self.reward_success_nav = rewards_config['success_nav']
         self.reward_success_pickup = rewards_config['success_pickup']
         self.reward_step = rewards_config['step_penalty']
-        self.reward_closer = rewards_config['closer_bonus']
-        self.reward_farther = rewards_config['farther_penalty']
         self.reward_illegal = rewards_config['illegal_action']
         
         # Episode配置
@@ -166,19 +164,21 @@ class AI2THORWrapper:
         current_distance = self._compute_distance_to_target()
         reward = self._compute_reward(current_distance, success, action_name)
         self.prev_distance = current_distance
-        
+
         # 检查是否完成
         done = False
         info = {}
-        
+
         if action_name == 'Pickup' and success:
             # 拾取成功
             self.held_object = self.target_object
             done = True
             info['success_pickup'] = True
+            reward += self.reward_success_pickup  # 拾取成功奖励
         elif current_distance <= self.success_distance:
             # 到达目标
             info['success_nav'] = True
+            reward += self.reward_success_nav  # 导航成功奖励
             # Pickup任务需要继续拾取
             if self.config['environment']['tasks'][1]['requires_nav']:
                 # 下一步必须Pickup
@@ -267,36 +267,28 @@ class AI2THORWrapper:
     
     def _compute_reward(self, current_distance: float, success: bool, action_name: str) -> float:
         """计算奖励
-        
-        奖励函数设计：
+
+        奖励函数设计 (基于稀疏奖励，不依赖目标绝对位置):
         - 到达目标: +10.0
         - 成功拾取: +5.0
-        - 每步惩罚: -0.1
-        - 靠近目标: +0.05/步
-        - 远离目标: -0.05/步
-        - 非法动作: -1.0
+        - 每步惩罚: -0.1 (鼓励高效行动)
+        - 非法动作: -1.0 (碰撞/越界)
+
+        注意: 移除了基于绝对距离的closer/farther奖励，
+        因为标准ObjectNav中Agent不知道目标绝对坐标，
+        使用绝对距离属于信息泄露(cheating)。
         """
         reward = 0.0
-        
-        # 每步惩罚
+
+        # 每步惩罚 (鼓励高效)
         reward += self.reward_step
-        
+
         # 非法动作惩罚
         if not success:
             reward += self.reward_illegal
-        
-        # 距离奖励/惩罚
-        if self.prev_distance is not None:
-            distance_change = self.prev_distance - current_distance
-            if distance_change > 0:
-                reward += self.reward_closer  # 靠近
-            else:
-                reward += self.reward_farther  # 远离
-        
-        # 导航成功奖励
-        if current_distance <= self.success_distance:
-            reward += self.reward_success_nav
-        
+
+        # 稀疏奖励: 仅在成功时给予奖励
+        # (导航成功/拾取成功由step()中的info字段标记)
         return reward
     
     def is_target_visible(self) -> bool:

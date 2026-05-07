@@ -281,6 +281,10 @@ class PPOTrainer:
             )
             self.optimizer.step()
             self.optimizer.zero_grad()
+
+            # 保持 lm_head 和 embed_tokens 的新增token参数同步
+            if hasattr(self.model, 'tie_weights'):
+                self.model.tie_weights()
             
             total_loss += loss.item()
         

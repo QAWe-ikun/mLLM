@@ -55,6 +55,9 @@ class VLABackbone(nn.Module):
                 local_files_only=True,
             )
 
+            # 记录原始词表大小 (用于后续trainable_token_indices计算)
+            original_vocab_size = len(self.tokenizer)
+
             # 添加动作token到词表
             action_token_list = list(self.action_tokens.values())
             num_new_tokens = self.tokenizer.add_tokens(action_token_list)
@@ -79,13 +82,17 @@ class VLABackbone(nn.Module):
                 device_map="auto",
             )
 
-            # 调整词表大小
+            # 调整词表大小 (追加新token的embedding)
             self.model.resize_token_embeddings(len(self.tokenizer))
 
             # 应用LoRA
             from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
             self.model = prepare_model_for_kbit_training(self.model)
+
+            # 动态计算trainable_token_indices: 新增的action token索引
+            trainable_indices = list(range(original_vocab_size, len(self.tokenizer)))
+            print(f"Trainable token indices: {trainable_indices}")
 
             peft_config = LoraConfig(
                 r=lora_config['r'],
@@ -94,6 +101,7 @@ class VLABackbone(nn.Module):
                 bias=lora_config['bias'],
                 task_type=lora_config['task_type'],
                 target_modules=lora_config['target_modules'],
+                trainable_token_indices=trainable_indices,
             )
 
             self.model = get_peft_model(self.model, peft_config)

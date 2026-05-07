@@ -50,12 +50,12 @@ tasks:
 
 # 奖励配置
 rewards:
-  success_nav: 10.0
-  success_pickup: 5.0
-  step_penalty: -0.1
-  closer_bonus: 0.05
-  farther_penalty: -0.05
-  illegal_action: -1.0
+  success_nav: 10.0          # 到达目标位置
+  success_pickup: 5.0        # 成功拾取物体
+  step_penalty: -0.1         # 每步惩罚
+  illegal_action: -1.0       # 非法动作(碰撞/越界)
+  # 注: 移除了 closer_bonus 和 farther_penalty
+  # 因为基于绝对距离的奖励属于信息泄露(cheating)
 
 # Episode配置
 episode:

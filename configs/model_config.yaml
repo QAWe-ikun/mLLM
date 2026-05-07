@@ -44,6 +44,9 @@ lora:
     - "gate_proj"
     - "up_proj"
     - "down_proj"
+  # 可训练的token embedding索引 (新增的action token)
+  # 在resize_token_embeddings后，新token从original_vocab_size开始
+  trainable_token_indices: null  # 将在代码中动态计算
 
 # 动作token配置
 action_tokens:
